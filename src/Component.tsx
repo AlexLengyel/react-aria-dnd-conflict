@@ -46,13 +46,22 @@ const Component = () => {
           <Button slot="drag">
             <MoveIcon />
           </Button>
-          <TextField
-            aria-label="TextField"
-            value={item.name}
-            onChange={(value: string) =>
-              list.update(item.id, { ...item, name: value })
-            }
-          />
+          {/* Attempt to stop DnD on TextField by preventing dragstart — has no effect */}
+          <div
+            onDragStartCapture={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            <TextField
+              aria-label="TextField"
+              value={item.name}
+              onChange={(value: string) =>
+                list.update(item.id, { ...item, name: value })
+              }
+            />
+          </div>
+          {/* -------------------------------------------------------------------------- */}
         </GridListItem>
       )}
     </GridList>
