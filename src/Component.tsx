@@ -80,8 +80,11 @@ const Component = () => {
           textValue={item.name}
           className={style({ display: "flex", gap: 8 })}
         >
-          {/* slot="drag" enables keyboard-accessible reordering but breaks mouse drag with the dragstart listener above. */}
-          <Button slot="drag" data-drag-handle>
+          <Button
+            slot="drag"
+            data-drag-handle
+            UNSAFE_style={{ pointerEvents: "auto" }}
+          >
             <MoveIcon />
           </Button>
           <TextField
