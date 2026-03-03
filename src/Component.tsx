@@ -1,3 +1,4 @@
+import { useRef, useEffect } from "react";
 import { useListData } from "@react-stately/data";
 import { Button, TextField } from "@react-spectrum/s2";
 import { GridList, GridListItem, useDragAndDrop } from "react-aria-components";
@@ -18,19 +19,40 @@ const Component = () => {
     ],
   });
 
+  const gridListRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = gridListRef.current;
+
+    if (!el) return;
+
+    const onDragStart = (e: DragEvent) => {
+      const target = document.elementFromPoint(e.clientX, e.clientY);
+      if (!target?.closest("[data-drag-handle]")) {
+        e.preventDefault();
+      }
+    };
+
+    el.addEventListener("dragstart", onDragStart, true);
+    return () => {
+      el.removeEventListener("dragstart", onDragStart, true);
+    };
+  }, []);
+
   const { dragAndDropHooks } = useDragAndDrop({
     getItems: (keys) => [...keys].map((key) => ({ "text/plain": String(key) })),
     onReorder(e) {
       if (e.target.dropPosition === "before") {
-        list.moveBefore(e.target.key, [...e.keys]);
+        list.moveBefore(e.target.key, e.keys);
       } else if (e.target.dropPosition === "after") {
-        list.moveAfter(e.target.key, [...e.keys]);
+        list.moveAfter(e.target.key, e.keys);
       }
     },
   });
 
   return (
     <GridList
+      ref={gridListRef}
       aria-label="GridList"
       items={list.items}
       dragAndDropHooks={dragAndDropHooks}
@@ -43,25 +65,17 @@ const Component = () => {
           textValue={item.name}
           className={style({ display: "flex", gap: 8 })}
         >
-          <Button slot="drag">
+          {/* slot="drag" enables keyboard-accessible reordering but breaks mouse drag with the dragstart listener above. */}
+          <Button slot="drag" data-drag-handle>
             <MoveIcon />
           </Button>
-          {/* Attempt to stop DnD on TextField by preventing dragstart — has no effect */}
-          <div
-            onDragStartCapture={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
-            <TextField
-              aria-label="TextField"
-              value={item.name}
-              onChange={(value: string) =>
-                list.update(item.id, { ...item, name: value })
-              }
-            />
-          </div>
-          {/* -------------------------------------------------------------------------- */}
+          <TextField
+            aria-label="TextField"
+            value={item.name}
+            onChange={(value: string) =>
+              list.update(item.id, { ...item, name: value })
+            }
+          />
         </GridListItem>
       )}
     </GridList>
