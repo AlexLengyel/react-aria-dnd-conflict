@@ -1,7 +1,14 @@
-import { useRef, useEffect } from "react";
+import { useMemo } from "react";
 import { useListData } from "@react-stately/data";
 import { Button, TextField } from "@react-spectrum/s2";
-import { GridList, GridListItem, useDragAndDrop } from "react-aria-components";
+import {
+  GridList,
+  GridListItem,
+  useDragAndDrop,
+  type DragAndDropHooks,
+} from "react-aria-components";
+import type { DraggableItemProps, DraggableItemResult } from "react-aria";
+import type { DraggableCollectionState } from "react-stately";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import MoveIcon from "@react-spectrum/s2/icons/Move";
 
@@ -19,27 +26,7 @@ const Component = () => {
     ],
   });
 
-  const gridListRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = gridListRef.current;
-
-    if (!el) return;
-
-    const onDragStart = (e: DragEvent) => {
-      const target = document.elementFromPoint(e.clientX, e.clientY);
-      if (!target?.closest("[data-drag-handle]")) {
-        e.preventDefault();
-      }
-    };
-
-    el.addEventListener("dragstart", onDragStart, true);
-    return () => {
-      el.removeEventListener("dragstart", onDragStart, true);
-    };
-  }, []);
-
-  const { dragAndDropHooks } = useDragAndDrop({
+  const { dragAndDropHooks: baseDragAndDropHooks } = useDragAndDrop({
     getItems: (keys) => [...keys].map((key) => ({ "text/plain": String(key) })),
     onReorder(e) {
       if (e.target.dropPosition === "before") {
@@ -50,9 +37,37 @@ const Component = () => {
     },
   });
 
+  const dragAndDropHooks = useMemo(
+    (): DragAndDropHooks => ({
+      ...baseDragAndDropHooks,
+      useDraggableItem(
+        props: DraggableItemProps,
+        state: DraggableCollectionState,
+      ): DraggableItemResult {
+        const dragItem = baseDragAndDropHooks.useDraggableItem!(props, state);
+        const originalOnDragStart = dragItem?.dragProps?.onDragStart;
+
+        return {
+          ...dragItem,
+          dragProps: {
+            ...dragItem?.dragProps,
+            onDragStart(e: React.DragEvent<HTMLElement>) {
+              const target = document.elementFromPoint(e.clientX, e.clientY);
+              if (!target?.closest("[data-drag-handle]")) {
+                e.preventDefault();
+                return;
+              }
+              originalOnDragStart?.(e);
+            },
+          },
+        };
+      },
+    }),
+    [baseDragAndDropHooks],
+  );
+
   return (
     <GridList
-      ref={gridListRef}
       aria-label="GridList"
       items={list.items}
       dragAndDropHooks={dragAndDropHooks}
