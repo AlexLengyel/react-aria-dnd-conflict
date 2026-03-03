@@ -22,9 +22,9 @@ const Component = () => {
     getItems: (keys) => [...keys].map((key) => ({ "text/plain": String(key) })),
     onReorder(e) {
       if (e.target.dropPosition === "before") {
-        list.moveBefore(e.target.key, [...e.keys]);
+        list.moveBefore(e.target.key, e.keys);
       } else if (e.target.dropPosition === "after") {
-        list.moveAfter(e.target.key, [...e.keys]);
+        list.moveAfter(e.target.key, e.keys);
       }
     },
   });
@@ -46,22 +46,14 @@ const Component = () => {
           <Button slot="drag">
             <MoveIcon />
           </Button>
-          {/* Attempt to stop DnD on TextField by preventing dragstart — has no effect */}
-          <div
-            onDragStartCapture={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
-            <TextField
-              aria-label="TextField"
-              value={item.name}
-              onChange={(value: string) =>
-                list.update(item.id, { ...item, name: value })
-              }
-            />
-          </div>
-          {/* -------------------------------------------------------------------------- */}
+
+          <TextField
+            aria-label="TextField"
+            value={item.name}
+            onChange={(value: string) =>
+              list.update(item.id, { ...item, name: value })
+            }
+          />
         </GridListItem>
       )}
     </GridList>
